@@ -2,13 +2,14 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 use rand::seq::SliceRandom;
 use std::collections::HashSet;
+use rand::prelude::IteratorRandom;
 
 pub fn load_words(file_path: &str) -> io::Result<HashSet<String>> {
     let file = File::open(file_path)?;
     let reader = BufReader::new(file);
     let words = reader
         .lines()
-        .filer_map(|line| line.ok())
+        .filter_map(|line| line.ok())
         .map(|line| line.trim().to_lowercase())
         .collect();
     Ok(words)
@@ -19,7 +20,7 @@ pub fn pick_random_word(words: &HashSet<String>) -> Option<String> {
     words.iter().choose(&mut rng).cloned()
 }
 
-pub fn scramble_words(word: &str) -> String {
+pub fn scramble_word(word: &str) -> String {
     let mut chars: Vec<char> = word.chars().collect();
     let mut rng = rand::thread_rng();
     chars.shuffle(&mut rng);
