@@ -17,7 +17,7 @@ pub fn run_game() -> io::Result<()> {
         loop {
             println!("Enter a word (or type 'quit' to end): ");
             let mut guess = String::new();
-            io::stdin().read_lines(&mut guess).unwrap();
+            io::stdin().read_line(&mut guess).unwrap();
             let guess = guess.trim().to_lowercase();
 
             if guess == "quit" {
