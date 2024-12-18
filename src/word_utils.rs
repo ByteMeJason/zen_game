@@ -19,7 +19,7 @@ pub fn pick_random_word(words: &HashSet<String>) -> Option<String> {
     words.iter().choose(&mut rng).cloned()
 }
 
-pub fn scamble_words(word: &str) -> String {
+pub fn scramble_words(word: &str) -> String {
     let mut chars: Vec<char> = word.chars().collect();
     let mut rng = rand::thread_rng();
     chars.shuffle(&mut rng);
