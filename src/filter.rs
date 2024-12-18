@@ -14,7 +14,7 @@ pub fn filter_words() -> io::Result<()> {
 
         match word.len() {
             6 => writeln!(six_letter_file, "{}", word)?, // Write 6-letter words
-            3..=5 => writeln!(word_bank_file, "{}", word)?, // Write 3, 4, 5-letter words
+            3..=5 => writeln!(word_bank_file, "{}", word)?, // Write 3..5-letter words
             _ => {} // Skip all other words
         }
     }
