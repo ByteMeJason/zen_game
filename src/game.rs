@@ -1,6 +1,64 @@
-use crate::word_utils::{load_words, pick_random_word, scramble_word, is_valid_guess};
-use std::collections::HashSet;
-use std::io;
+use crate::word_utils::{find_valid_substrings, is_valid_guess, load_words, pick_random_word, scramble_word};
+use std::collections::{HashMap, HashSet};
+use std::io::{self, Write};
+
+pub fn display_game_board(
+    scrambled: &str,
+    guessed_words: &HashSet<String>, 
+    valid_substrings: &[String],
+) {
+    // Clear the terminal
+    print!("\x1B[2J\x1B[1;1H");
+    std::io::stdout().flush().unwrap();
+
+    // Group valid words by length
+    let mut word_groups: HashMap<usize, Vec<String>> = HashMap::new();
+    for word in valid_substrings {
+       word_groups.entry(word.len()).or_default().push(word.clone());
+    }
+
+    let total_words = valid_substrings.len();
+    let words_per_column = 9;
+    let num_columns = ((total_words + words_per_column - 1)/words_per_column) as usize; // rounded up
+
+    println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+    println!("Scrambled word: {}\n", scrambled);
+    println!("Form words using the scrambled letters!");
+    println!("Total possible valid words: {}\n", total_words);
+    println!("Enter a word, or type:");
+    println!("0 - Quit");
+    println!("1 - Show all valid substrings");
+    println!("2 - Reveal the secret word\n");
+
+    // Flatten all valid substrings and sort by length
+    let mut all_words: Vec<_> = valid_substrings.iter().cloned().collect();
+    all_words.sort_by(|a, b| a.len().cmp(&b.len())); // Sort words by length
+
+    // Prepare columns
+    let mut columns = vec![vec![]; num_columns];
+    for (i, word) in all_words.iter().enumerate() {
+        if guessed_words.contains(word) {
+            columns[i % num_columns].push(word.to_string()); // Guessed word
+        } else {
+            columns[i % num_columns].push("_".repeat(word.len())); // Placeholder
+        }
+    }
+
+    // Display columns
+    let max_rows = columns.iter().map(|col| col.len()).max().unwrap_or(0);
+    for row in 0..max_rows {
+        for col in &columns {
+            if let Some(word) = col.get(row) {
+                print!("{:<12}", word); // Adjust column width
+            } else {
+                print!("{:<12}", ""); // Empty space for shorter columns
+            }
+        }
+        println!();
+    }
+    println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
+}
 
 pub fn run_game() -> io::Result<()> {
     let six_letter_words = load_words("six_letter_words.txt")?;
@@ -8,20 +66,32 @@ pub fn run_game() -> io::Result<()> {
 
     if let Some(secret_word) = pick_random_word(&six_letter_words) {
         let scrambled = scramble_word(&secret_word);
-        println!("Scrambled word: {}", scrambled);
-        println!("Form words using the scrambled letters!");
-
-        let mut score = 0;
-        let mut guessed_words = HashSet::new();
+        let valid_substrings = find_valid_substrings(&word_bank, &scrambled);
+        let mut guessed_words: HashSet<_> = HashSet::new();
+       
 
         loop {
-            println!("Enter a word (or type 'quit' to end): ");
+            // Game board
+            display_game_board(&scrambled, &guessed_words, &valid_substrings);
+            
+            println!("Your guess: ");
             let mut guess = String::new();
             io::stdin().read_line(&mut guess).unwrap();
             let guess = guess.trim().to_lowercase();
 
-            if guess == "quit" {
-                println!("Thanks for playing! Final score: {}", score);
+            if guess == "0" {
+                println!("Thanks for playing! Final score: {}", guessed_words.len());
+                break;
+            }
+
+            if guess == "1" {
+                println!("Valid substrings: {:?}", valid_substrings);
+                continue;
+            }
+
+            if guess == "2" {
+                println!("The secret word is: {}", secret_word);
+                println!("Game over. Final score: {}", guessed_words.len());
                 break;
             }
 
@@ -30,11 +100,14 @@ pub fn run_game() -> io::Result<()> {
                 continue;
             }
 
-            if word_bank.contains(&guess) && is_valid_guess(&guess, &scrambled) {
+
+            if valid_substrings.contains(&guess) && is_valid_guess(&guess, &scrambled) {
                 guessed_words.insert(guess.clone());
-                let points = guess.len();
-                score += points;
-                println!("You Scored {} points. Current Score: {}", points, score);
+                println!("Great! You guessed a valid word: {}", guess);
+                
+                // let points = guess.len();
+                // score += points;
+                // println!("You Scored {} points. Current Score: {}", points, score);
 
                 if guess == secret_word {
                     println!("You guessed the SECRET WORD: {}", secret_word);
