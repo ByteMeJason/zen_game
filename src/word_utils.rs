@@ -38,3 +38,12 @@ pub fn is_valid_guess(guess: &str, scrambled: &str) -> bool {
     }
     true
 }
+
+pub fn find_valid_substrings(word_bank: &HashSet<String>, scrambled: &str) -> Vec<String> {
+    word_bank
+        .iter()
+        .filter(|word| is_valid_guess(word, scrambled))
+        .cloned()
+        .collect()
+}
+
